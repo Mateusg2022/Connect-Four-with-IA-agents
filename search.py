@@ -104,10 +104,72 @@ def choose_move(board: List[List[int]], turn: int, config: Dict) -> Tuple[int, D
         # Sem jogadas: devolve 0 por convenção (servidor lida com isso)
         return move
     
-    # VERSÃO INICIAL: escolhe aleatoriamente entre as jogadas legais
-    move = random.choice(legal)
+    move = mini_max(board, legal, turn, max_depth)
 
     return move
+
+def mini_max(board, legal, player, max_depth):
+    opponent = other(player)
+
+    # --------- heuristica simples ---------
+    def heuristic(board):
+        score = 0
+
+        # valoriza coluna central
+        center_col = COLS // 2
+        center = [board[r][center_col] for r in range(ROWS)]
+        score += center.count(player) * 3
+
+        return score
+
+    # --------- minimax ---------
+    def minimax(board, depth, maximizing):
+        terminou, vencedor = terminal(board)
+
+        # caso terminal --> funcao utilidade
+        if terminou:
+            if vencedor == player:
+                return 1000
+            elif vencedor == opponent:
+                return -1000
+            else:
+                return 0
+
+        # deoth limite
+        if depth == 0:
+            return heuristic(board)
+
+        moves = valid_moves(board)
+
+        if maximizing:
+            best = -math.inf
+            for col in moves:
+                nb = make_move(board, col, player)
+                val = minimax(nb, depth - 1, False)
+                best = max(best, val)
+            return best
+
+        else:
+            best = math.inf
+            for col in moves:
+                nb = make_move(board, col, opponent)
+                val = minimax(nb, depth - 1, True)
+                best = min(best, val)
+            return best
+
+    #escolhe
+    best_score = -math.inf
+    best_move = legal[0]
+
+    for col in legal:
+        nb = make_move(board, col, player)
+        score = minimax(nb, max_depth - 1, False)  #subtrai 1 pq aqui ja fizemos uma jogada
+
+        if score > best_score:
+            best_score = score
+            best_move = col
+
+    return best_move
 
 def choose_move_randomly(board: List[List[int]], turn: int, config: Dict) -> Tuple[int, Dict]:
     max_time_ms = int(config.get("max_time_ms"))
