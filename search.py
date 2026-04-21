@@ -111,24 +111,69 @@ def choose_move(board: List[List[int]], turn: int, config: Dict) -> Tuple[int, D
 def mini_max(board, legal, player, max_depth, time_exceeded):
 
     opponent = other(player)
-
-    # --------- heurística ---------
+    
+    # --------- heuristica ---------
     def heuristic(board):
         score = 0
+
+        def evaluate_window(window):
+            s = 0
+            player_count = window.count(player)
+            opp_count = window.count(opponent)
+            empty_count = window.count(EMPTY)
+
+            if player_count == 4:
+                s += 100
+            elif player_count == 3 and empty_count == 1:
+                s += 5
+            elif player_count == 2 and empty_count == 2:
+                s += 2
+
+            if opp_count == 3 and empty_count == 1:
+                s -= 6
+
+            return s
+
+        #centro
         center_col = COLS // 2
         center = [board[r][center_col] for r in range(ROWS)]
         score += center.count(player) * 3
-        score -= center.count(opponent) * 2
+
+        #horizontais
+        for r in range(ROWS):
+            for c in range(COLS - 3):
+                window = [board[r][c+i] for i in range(4)]
+                score += evaluate_window(window)
+
+        #verticais
+        for c in range(COLS):
+            for r in range(ROWS - 3):
+                window = [board[r+i][c] for i in range(4)]
+                score += evaluate_window(window)
+
+        #diagonal direita baixo
+        for r in range(ROWS - 3):
+            for c in range(COLS - 3):
+                window = [board[r+i][c+i] for i in range(4)]
+                score += evaluate_window(window)
+
+        #diagonal direita cima
+        for r in range(3, ROWS):
+            for c in range(COLS - 3):
+                window = [board[r-i][c+i] for i in range(4)]
+                score += evaluate_window(window)
+
         return score
 
     # --------- minimax ---------
-    def minimax(board, depth, maximizing, alpha, beta):
+    def minimax(board, depth, maximizing, alpha, beta, count=[0]):
 
         if time_exceeded():
             return heuristic(board)
 
         terminou, vencedor = terminal(board)
-
+        count[0] += 1
+        # nó folha --> funcao utilidade
         if terminou:
             if vencedor == player:
                 return 1000
@@ -137,10 +182,13 @@ def mini_max(board, legal, player, max_depth, time_exceeded):
             else:
                 return 0
 
+        # death limite
         if depth == 0:
             return heuristic(board)
 
-        moves = valid_moves(board)
+        # moves = valid_moves(board)
+        moves = sorted(valid_moves(board), key=lambda c: abs(c - 3))
+        
         if maximizing:
             best = -math.inf
             for col in moves:
@@ -154,7 +202,6 @@ def mini_max(board, legal, player, max_depth, time_exceeded):
                     break
 
             return best
-
         else:
             best = math.inf
             for col in moves:
@@ -172,19 +219,35 @@ def mini_max(board, legal, player, max_depth, time_exceeded):
     #escolhe
     best_score = -math.inf
     best_move = legal[0]
+    countTotal = 0
+    legal = sorted(legal, key=lambda c: abs(c - 3))
 
-    for col in legal:
+    for depth in range(1, max_depth + 1):
 
         if time_exceeded():
             break
+        
+        current_best_move = best_move
+        current_best_score = -math.inf
 
-        nb = make_move(board, col, player)
-        score = minimax(nb, max_depth - 1, False, -math.inf, math.inf) #subtrai 1 pq aqui ja fizemos uma jogada
+        for col in legal:
 
-        if score > best_score:
-            best_score = score
-            best_move = col
+            if time_exceeded():
+                break
 
+            nb = make_move(board, col, player)
+
+            score = minimax(nb, depth - 1, False, -math.inf, math.inf)
+
+            if score > current_best_score:
+                current_best_score = score
+                current_best_move = col
+
+        # só atualiza se terminou essa profundidade
+        if not time_exceeded():
+            best_move = current_best_move
+            best_score = current_best_score
+    
     return best_move
 
 def choose_move_randomly(board: List[List[int]], turn: int, config: Dict) -> Tuple[int, Dict]:
