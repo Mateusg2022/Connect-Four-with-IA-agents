@@ -104,29 +104,31 @@ def choose_move(board: List[List[int]], turn: int, config: Dict) -> Tuple[int, D
         # Sem jogadas: devolve 0 por convenção (servidor lida com isso)
         return move
     
-    move = mini_max(board, legal, turn, max_depth)
+    move = mini_max(board, legal, turn, max_depth, time_exceeded)
 
     return move
 
-def mini_max(board, legal, player, max_depth):
+def mini_max(board, legal, player, max_depth, time_exceeded):
+
     opponent = other(player)
 
-    # --------- heuristica simples ---------
+    # --------- heurística ---------
     def heuristic(board):
         score = 0
-
-        # valoriza coluna central
         center_col = COLS // 2
         center = [board[r][center_col] for r in range(ROWS)]
         score += center.count(player) * 3
-
+        score -= center.count(opponent) * 2
         return score
 
     # --------- minimax ---------
-    def minimax(board, depth, maximizing):
+    def minimax(board, depth, maximizing, alpha, beta):
+
+        if time_exceeded():
+            return heuristic(board)
+
         terminou, vencedor = terminal(board)
 
-        # caso terminal --> funcao utilidade
         if terminou:
             if vencedor == player:
                 return 1000
@@ -135,26 +137,36 @@ def mini_max(board, legal, player, max_depth):
             else:
                 return 0
 
-        # deoth limite
         if depth == 0:
             return heuristic(board)
 
         moves = valid_moves(board)
-
         if maximizing:
             best = -math.inf
             for col in moves:
                 nb = make_move(board, col, player)
-                val = minimax(nb, depth - 1, False)
+                val = minimax(nb, depth - 1, False, alpha, beta)
+
                 best = max(best, val)
+                alpha = max(alpha, best)
+
+                if alpha >= beta:
+                    break
+
             return best
 
         else:
             best = math.inf
             for col in moves:
                 nb = make_move(board, col, opponent)
-                val = minimax(nb, depth - 1, True)
+                val = minimax(nb, depth - 1, True, alpha, beta)
+
                 best = min(best, val)
+                beta = min(beta, best)
+
+                if alpha >= beta:
+                    break
+
             return best
 
     #escolhe
@@ -162,8 +174,12 @@ def mini_max(board, legal, player, max_depth):
     best_move = legal[0]
 
     for col in legal:
+
+        if time_exceeded():
+            break
+
         nb = make_move(board, col, player)
-        score = minimax(nb, max_depth - 1, False)  #subtrai 1 pq aqui ja fizemos uma jogada
+        score = minimax(nb, max_depth - 1, False, -math.inf, math.inf) #subtrai 1 pq aqui ja fizemos uma jogada
 
         if score > best_score:
             best_score = score
