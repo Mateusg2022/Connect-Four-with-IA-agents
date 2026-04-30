@@ -13,7 +13,8 @@ ROWS, COLS = 6, 7
 AI_PLAYERS = {
     "AI_Student" : search.choose_move,
     "AI_Random" : search.choose_move_randomly,
-    "AI_Dummy": search.choose_move_infinity
+    "AI_Dummy": search.choose_move_infinity,
+    "AI_mateus": search.choose_move_mateus
 }
 
 def fallback_move(board):
