@@ -2,6 +2,7 @@ from typing import List, Tuple, Optional, Dict
 import time
 import math
 import random
+from metrics import salvar_metricas
 
 ROWS, COLS = 6, 7
 EMPTY, P1, P2 = 0, 1, 2
@@ -85,6 +86,9 @@ def choose_move(board: List[List[int]], turn: int, config: Dict) -> Tuple[int, D
     Retorna:
       - col: int (0..6)
     """
+
+    inicio = time.time()
+
     max_time_ms = int(config.get("max_time_ms"))
     max_depth = int(config.get("max_depth"))
     turn = int(turn)
@@ -104,7 +108,20 @@ def choose_move(board: List[List[int]], turn: int, config: Dict) -> Tuple[int, D
         # Sem jogadas: devolve 0 por convenção (servidor lida com isso)
         return move
     
-    move = mini_max(board, legal, turn, max_depth, time_exceeded)
+    # move = mini_max(board, legal, turn, max_depth, time_exceeded)
+    move, estados = mini_max(board, legal, turn, max_depth, time_exceeded)
+
+    fim = time.time()
+    tempo_ms = (fim - inicio) * 1000
+
+    # REGISTRA NO CSV
+    salvar_metricas(
+        "minimax",     # nome algoritmo
+        "",            # vencedor vazio
+        estados,
+        tempo_ms,
+        max_depth
+    )
 
     return move
 
@@ -166,8 +183,8 @@ def mini_max(board, legal, player, max_depth, time_exceeded):
         return score
 
     # --------- minimax ---------
-    def minimax(board, depth, maximizing, alpha, beta, count=[0]):
-
+    # def minimax(board, depth, maximizing, alpha, beta, count=[0]):
+    def minimax(board, depth, maximizing, alpha, beta, count):
         if time_exceeded():
             return heuristic(board)
 
@@ -193,7 +210,7 @@ def mini_max(board, legal, player, max_depth, time_exceeded):
             best = -math.inf
             for col in moves:
                 nb = make_move(board, col, player)
-                val = minimax(nb, depth - 1, False, alpha, beta)
+                val = minimax(nb, depth - 1, False, alpha, beta, count)
 
                 best = max(best, val)
                 alpha = max(alpha, best)
@@ -206,7 +223,7 @@ def mini_max(board, legal, player, max_depth, time_exceeded):
             best = math.inf
             for col in moves:
                 nb = make_move(board, col, opponent)
-                val = minimax(nb, depth - 1, True, alpha, beta)
+                val = minimax(nb, depth - 1, True, alpha, beta, count)
 
                 best = min(best, val)
                 beta = min(beta, best)
@@ -237,7 +254,10 @@ def mini_max(board, legal, player, max_depth, time_exceeded):
 
             nb = make_move(board, col, player)
 
-            score = minimax(nb, depth - 1, False, -math.inf, math.inf)
+            # score = minimax(nb, depth - 1, False, -math.inf, math.inf)
+            contador = [0]
+            score = minimax(nb, depth - 1, False, -math.inf, math.inf, contador)
+            countTotal += contador[0]
 
             if score > current_best_score:
                 current_best_score = score
@@ -248,7 +268,7 @@ def mini_max(board, legal, player, max_depth, time_exceeded):
             best_move = current_best_move
             best_score = current_best_score
     
-    return best_move
+    return best_move, countTotal
 
 def choose_move_randomly(board: List[List[int]], turn: int, config: Dict) -> Tuple[int, Dict]:
     max_time_ms = int(config.get("max_time_ms"))
