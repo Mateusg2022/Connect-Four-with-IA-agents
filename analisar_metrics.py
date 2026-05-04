@@ -41,7 +41,7 @@ def carregar():
 def mostrar_resumo(df):
     print("\n========== RESUMO GERAL ==========\n")
 
-    algoritmos = ["minimax", "alfa-beta"]
+    algoritmos = ["iterativeDeeping", "alfa-beta"]
 
     for alg in algoritmos:
         df_alg = df[df["algoritmo"] == alg]

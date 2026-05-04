@@ -71,7 +71,7 @@ def terminal(board: List[List[int]]) -> Tuple[bool, int]:
 def other(player: int) -> int:
     return P1 if player == P2 else P2
 
-def minimax_move(board: List[List[int]], turn: int, config: Dict) -> Tuple[int, Dict]:
+def alfaBeta_move(board: List[List[int]], turn: int, config: Dict) -> Tuple[int, Dict]:
 
     inicio = time.time()
 
@@ -92,15 +92,15 @@ def minimax_move(board: List[List[int]], turn: int, config: Dict) -> Tuple[int, 
     if not legal:
         return move
     
-    # move = mini_max1(board, legal, turn, max_depth, time_exceeded)
-    move, estados = mini_max1(board, legal, turn, max_depth, time_exceeded)
+    # move = iterativeDeeping(board, legal, turn, max_depth, time_exceeded)
+    move, estados = iterativeDeeping(board, legal, turn, max_depth, time_exceeded)
 
     fim = time.time()
     tempo_ms = (fim - inicio) * 1000
 
     # REGISTRA NO CSV
     salvar_metricas(
-        "minimax",     # algoritmo
+        "iterativeDeeping",     # algoritmo
         "",            # vencedor (vazio pq só da pra saber no server.py)
         estados,
         tempo_ms,
@@ -109,7 +109,7 @@ def minimax_move(board: List[List[int]], turn: int, config: Dict) -> Tuple[int, 
 
     return move
 
-def mini_max1(board, legal, player, max_depth, time_exceeded):
+def iterativeDeeping(board, legal, player, max_depth, time_exceeded):
 
     opponent = other(player)
     
@@ -167,8 +167,8 @@ def mini_max1(board, legal, player, max_depth, time_exceeded):
         return score
 
     # --------- minimax ---------
-    # def minimax(board, depth, maximizing, alpha, beta, count=[0]):
-    def minimax1(board, depth, maximizing, count):
+    def minimax(board, depth, maximizing, alpha, beta, count):
+
         if time_exceeded():
             return heuristic(board)
 
@@ -194,18 +194,26 @@ def mini_max1(board, legal, player, max_depth, time_exceeded):
             best = -math.inf
             for col in moves:
                 nb = make_move(board, col, player)
-                val = minimax1(nb, depth - 1, False, count)
+                val = minimax(nb, depth - 1, False, alpha, beta, count)
 
                 best = max(best, val)
+                alpha = max(alpha, best)
+
+                if alpha >= beta:
+                    break
 
             return best
         else:
             best = math.inf
             for col in moves:
                 nb = make_move(board, col, opponent)
-                val = minimax1(nb, depth - 1, True, count)
+                val = minimax(nb, depth - 1, True, alpha, beta, count)
 
                 best = min(best, val)
+                beta = min(beta, best)
+
+                if alpha >= beta:
+                    break
 
             return best
 
@@ -215,31 +223,40 @@ def mini_max1(board, legal, player, max_depth, time_exceeded):
     countTotal = 0
     legal = sorted(legal, key=lambda c: abs(c - 3))
 
-    current_best_move = best_move
-    current_best_score = -math.inf
-
-    for col in legal:
+    for depth in range(1, max_depth + 1):
 
         if time_exceeded():
             break
+        
+        ordered_moves = (
+            [best_move] + [c for c in legal if c != best_move]
+            if best_move in legal else legal
+        )
 
-        nb = make_move(board, col, player)
+        current_best_move = ordered_moves[0]
+        current_best_score = -math.inf
 
-        contador = [0]
-        score = minimax1(nb, max_depth - 1, False, contador)
-        countTotal += contador[0]
+        # for col in legal:
+        for col in ordered_moves:
 
-        if score > current_best_score:
-            current_best_score = score
-            current_best_move = col
+            if time_exceeded():
+                break
 
-    # só atualiza se terminou essa profundidade
-    if not time_exceeded():
-        best_move = current_best_move
-        best_score = current_best_score
+            nb = make_move(board, col, player)
+            contador = [0]
+            score = minimax(nb, depth - 1, False, -math.inf, math.inf, contador)
+            # countTotal += contador[0]
+            countTotal  += contador[0]
+            if score > current_best_score:
+                current_best_score = score
+                current_best_move = col
+
+        # só atualiza se terminou essa profundidade
+        if not time_exceeded():
+            best_move = current_best_move
+            best_score = current_best_score
     
     return best_move, countTotal
-
 # -----------------------------------------------------------------------------
 # ÚNICO PONTO A SER IMPLEMENTADO PELOS ALUNOS
 # -----------------------------------------------------------------------------
