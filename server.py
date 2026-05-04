@@ -12,6 +12,7 @@ ROWS, COLS = 6, 7
 
 AI_PLAYERS = {
     "AI_Student" : search.choose_move,
+    "AI_Minimax" : search.minimax_move,
     "AI_Random" : search.choose_move_randomly,
     "AI_Dummy": search.choose_move_infinity
 }

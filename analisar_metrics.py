@@ -22,21 +22,49 @@ def carregar():
     return df
 
 
+# def mostrar_resumo(df):
+#     print("\n========== RESUMO GERAL ==========\n")
+
+#     print(f"Total de registros: {len(df)}")
+
+#     print("\nMédias gerais:")
+#     print(f"Estados visitados: {df['estados_visitados'].mean():.2f}")
+#     print(f"Tempo (ms):        {df['tempo(ms)'].mean():.2f}")
+#     print(f"Profundidade:      {df['profundidade'].mean():.2f}")
+
+#     print("\nMaior tempo:", df["tempo(ms)"].max())
+#     print("Menor tempo:", df["tempo(ms)"].min())
+
+#     print("\nMaior estados:", df["estados_visitados"].max())
+#     print("Menor estados:", df["estados_visitados"].min())
+
 def mostrar_resumo(df):
     print("\n========== RESUMO GERAL ==========\n")
 
-    print(f"Total de registros: {len(df)}")
+    algoritmos = ["minimax", "alfa-beta"]
 
-    print("\nMédias gerais:")
-    print(f"Estados visitados: {df['estados_visitados'].mean():.2f}")
-    print(f"Tempo (ms):        {df['tempo(ms)'].mean():.2f}")
-    print(f"Profundidade:      {df['profundidade'].mean():.2f}")
+    for alg in algoritmos:
+        df_alg = df[df["algoritmo"] == alg]
 
-    print("\nMaior tempo:", df["tempo(ms)"].max())
-    print("Menor tempo:", df["tempo(ms)"].min())
+        if len(df_alg) == 0:
+            continue
 
-    print("\nMaior estados:", df["estados_visitados"].max())
-    print("Menor estados:", df["estados_visitados"].min())
+        print(f"\n--- {alg.upper()} ---\n")
+
+        print(f"Total de registros: {len(df_alg)}")
+
+        print("\nMédias:")
+        print(f"Estados visitados: {df_alg['estados_visitados'].mean():.2f}")
+        print(f"Tempo (ms):        {df_alg['tempo(ms)'].mean():.2f}")
+        print(f"Profundidade:      {df_alg['profundidade'].mean():.2f}")
+
+        print("\nMaior tempo:", df_alg["tempo(ms)"].max())
+        print("Menor tempo:", df_alg["tempo(ms)"].min())
+
+        print("\nMaior estados:", df_alg["estados_visitados"].max())
+        print("Menor estados:", df_alg["estados_visitados"].min())
+
+        print("\n--------------------------")
 
 
 def mostrar_por_algoritmo(df):
