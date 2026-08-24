@@ -1,4 +1,4 @@
-Trabalho prático da disciplina de introdução à inteligÊncia artificial na ufmg
+Trabalho prático da disciplina de introdução à inteligência artificial na ufmg
 
 
 Alunos:
